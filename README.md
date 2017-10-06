@@ -480,7 +480,7 @@ None
 * **[Boolean] PasswordNeverExpires** _(Write)_: Indicates if the password will expire. To ensure that the password for this account will never expire, set this property to $true, and set it to $false if the password will expire.
    - Suported values: $true, $false
    - Default value: $false
-   
+
 #### Examples
 
 * [Create a new User](https://github.com/PowerShell/xPSDesiredStateConfiguration/blob/dev/Examples/Sample_xUser_CreateUser.ps1)
@@ -554,6 +554,7 @@ This resource works on Nano Server.
 * **[String] Ensure** _(Write)_: Specifies whether the feature should be enabled or disabled. To enable the feature, set this property to Present. To disable the feature, set the property to Absent. The default value is Present. { *Present* | Absent }.
 * **[Boolean] RemoveFilesOnDisable** _(Write)_: Specifies that all files associated with the feature should be removed if the feature is being disabled.
 * **[Boolean] NoWindowsUpdateCheck** _(Write)_: Specifies whether or not DISM contacts Windows Update (WU) when searching for the source files to enable the feature. If $true, DISM will not contact WU.
+* **[Boolean] NoRestart** _(Write)_: Specifies whether or not resource request reboot if needed.
 * **[String] LogPath** _(Write)_: The path to the log file to log this operation. There is no default value, but if not set, the log will appear at %WINDIR%\Logs\Dism\dism.log.
 * **[String] LogLevel** _(Write)_: The maximum output level to show in the log. ErrorsOnly will log only errors. ErrorsAndWarning will log only errors and warnings. ErrorsAndWarningAndInformation will log errors, warnings, and debug information). The default value is "ErrorsAndWarningAndInformation".  { ErrorsOnly | ErrorsAndWarning | *ErrorsAndWarningAndInformation* }.
 
@@ -655,7 +656,7 @@ Publishes a 'FileInfo' object(s) to the pullserver configuration repository. It 
 ### 6.2.0.0
 
 * xMsiPackage:
-    * Created high quality MSI package manager resource 
+    * Created high quality MSI package manager resource
 * xArchive:
     * Fixed a minor bug in the unit tests where sometimes the incorrect DateTime format was used.
 * xWindowsFeatureSet:
@@ -683,7 +684,7 @@ Publishes a 'FileInfo' object(s) to the pullserver configuration repository. It 
     * Added unit and end-to-end tests.
     * Significantly cleaned the resource.
     * Minor Breaking Change where the resource will now throw an error if no value is provided, Ensure is set to present, and the variable does not exist, whereas before it would create an empty registry key on the machine in this case (if this is the desired outcome then use the Registry resource).
-    * Added a new Write property 'Target', which specifies whether the user wants to set the machine variable, the process variable, or both (previously it was setting both in most cases).  
+    * Added a new Write property 'Target', which specifies whether the user wants to set the machine variable, the process variable, or both (previously it was setting both in most cases).
 * xGroup:
     * Group members in the "NT Authority", "BuiltIn" and "NT Service" scopes should now be resolved without an error. If you were seeing the errors "Exception calling ".ctor" with "4" argument(s): "Server names cannot contain a space character."" or "Exception calling ".ctor" with "2" argument(s): "Server names cannot contain a space character."", this fix should resolve those errors. If you are still seeing one of the errors, there is probably another local scope we need to add. Please let us know.
     * The resource will no longer attempt to resolve group members if Members, MembersToInclude, and MembersToExclude are not specified.
@@ -728,7 +729,7 @@ Publishes a 'FileInfo' object(s) to the pullserver configuration repository. It 
     * Added integration tests for BuiltInAccount and Credential.
 * xServiceSet:
     * Updated resource to use new ResouceSetHelper functions and added integration tests.
-    * Updated documentation and example 
+    * Updated documentation and example
 * xWindowsProcess
     * Cleaned resource as per high quality guidelines.
     * Added unit tests.
@@ -753,7 +754,7 @@ Publishes a 'FileInfo' object(s) to the pullserver configuration repository. It 
     * Fixed bug in which the user could not set a Binary registry value to 0
     * Added unit and integration tests
     * Added examples and updated documentation
-    
+
 ### 5.0.0.0
 
 * xWindowsFeature:
