@@ -1,8 +1,5 @@
 <#
-    These tests should only be run in AppVeyor since they currently require the AppVeyor
-    administrator account credential to run.
-
-    Also please note that these tests are currently dependent on each other.
+    Please note that these tests are currently dependent on each other.
     They must be run in the order given and if one test fails, subsequent tests will
     also fail.
 #>
@@ -15,6 +12,11 @@ $script:testsFolderFilePath = Split-Path $PSScriptRoot -Parent
 $script:commonTestHelperFilePath = Join-Path -Path $testsFolderFilePath -ChildPath 'CommonTestHelper.psm1'
 Import-Module -Name $commonTestHelperFilePath
 
+if (Test-SkipContinuousIntegrationTask -Type 'Integration')
+{
+    return
+}
+
 $script:testEnvironment = Enter-DscResourceTestEnvironment `
     -DscResourceModuleName 'xPSDesiredStateConfiguration' `
     -DscResourceName 'MSFT_xServiceResource' `
@@ -24,7 +26,7 @@ try
 {
     Describe 'xService Integration Tests' {
         BeforeAll {
-            # Import CommonResourceHelper for Test-IsNanoServer, Get-AppveyorAdministratorCredential
+            # Import CommonResourceHelper for Test-IsNanoServer, Get-TestAdministratorAccountCredential
             $moduleRootFilePath = Split-Path -Path $script:testsFolderFilePath -Parent
             $dscResourcesFolderFilePath = Join-Path -Path $moduleRootFilePath -ChildPath 'DscResources'
             $commonResourceHelperFilePath = Join-Path -Path $dscResourcesFolderFilePath -ChildPath 'CommonResourceHelper.psm1'
@@ -116,59 +118,59 @@ try
             $resourceParameters = $script:existingServiceProperties
 
             It 'Should compile and apply the MOF without throwing' {
-                { 
+                {
                     . $script:configurationAllExceptCredentialFilePath -ConfigurationName $configurationName
                     & $configurationName -OutputPath $TestDrive @resourceParameters
                     Start-DscConfiguration -Path $TestDrive -ErrorAction 'Stop' -Wait -Force
-                } | Should Not Throw
+                } | Should -Not -Throw
             }
 
             $service = Get-Service -Name $resourceParameters.Name -ErrorAction 'SilentlyContinue'
             $serviceCimInstance = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name='$($resourceParameters.Name)'" -ErrorAction 'SilentlyContinue'
 
             It 'Should have created a new service with the specified name' {
-                 $service | Should Not Be $null
-                 $serviceCimInstance | Should Not Be $null
+                 $service | Should -Not -Be $null
+                 $serviceCimInstance | Should -Not -Be $null
 
-                 $service.Name | Should Be $resourceParameters.Name
-                 $serviceCimInstance.Name | Should Be $resourceParameters.Name
+                 $service.Name | Should -Be $resourceParameters.Name
+                 $serviceCimInstance.Name | Should -Be $resourceParameters.Name
             }
 
             It 'Should have created a new service with the specified path' {
-                $serviceCimInstance.PathName | Should Be $resourceParameters.Path
+                $serviceCimInstance.PathName | Should -Be $resourceParameters.Path
             }
 
             It 'Should have created a new service with the specified display name' {
-                $service.DisplayName | Should Be $resourceParameters.DisplayName
+                $service.DisplayName | Should -Be $resourceParameters.DisplayName
             }
 
             It 'Should have created a new service with the specified description' {
-                $serviceCimInstance.Description | Should Be $resourceParameters.Description
+                $serviceCimInstance.Description | Should -Be $resourceParameters.Description
             }
 
             It 'Should have created a new service with the specified dependencies' {
                 $differentDependencies = Compare-Object -ReferenceObject $resourceParameters.Dependencies -DifferenceObject $service.ServicesDependedOn.Name
-                $differentDependencies | Should Be $null
+                $differentDependencies | Should -Be $null
             }
 
             It 'Should have created a new service with the default state as Running' {
-                $service.Status | Should Be 'Running'
+                $service.Status | Should -Be 'Running'
             }
 
             It 'Should have created a new service with the default startup type as Auto' {
-                $serviceCimInstance.StartMode | Should Be 'Auto'
+                $serviceCimInstance.StartMode | Should -Be 'Auto'
             }
 
             It 'Should have created a new service with the default startup account name as LocalSystem' {
-                $serviceCimInstance.StartName | Should Be 'LocalSystem'
+                $serviceCimInstance.StartName | Should -Be 'LocalSystem'
             }
 
             It 'Should have created a new service with the default desktop interaction setting as False' {
-                $serviceCimInstance.DesktopInteract | Should Be $false
+                $serviceCimInstance.DesktopInteract | Should -Be $false
             }
 
             It 'Should return true from Test-TargetResource with the same parameters' {
-                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should Be $true
+                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should -Be $true
             }
         }
 
@@ -179,59 +181,59 @@ try
             $resourceParameters = $script:newServiceProperties
 
             It 'Should compile and apply the MOF without throwing' {
-                { 
+                {
                     . $script:configurationAllExceptCredentialFilePath -ConfigurationName $configurationName
                     & $configurationName -OutputPath $TestDrive @resourceParameters
                     Start-DscConfiguration -Path $TestDrive -ErrorAction 'Stop' -Wait -Force
-                } | Should Not Throw
+                } | Should -Not -Throw
             }
 
             $service = Get-Service -Name $resourceParameters.Name -ErrorAction 'SilentlyContinue'
             $serviceCimInstance = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name='$($resourceParameters.Name)'" -ErrorAction 'SilentlyContinue'
 
             It 'Should not have removed service with specified name' {
-                 $service | Should Not Be $null
-                 $serviceCimInstance | Should Not Be $null
+                 $service | Should -Not -Be $null
+                 $serviceCimInstance | Should -Not -Be $null
 
-                 $service.Name | Should Be $resourceParameters.Name
-                 $serviceCimInstance.Name | Should Be $resourceParameters.Name
+                 $service.Name | Should -Be $resourceParameters.Name
+                 $serviceCimInstance.Name | Should -Be $resourceParameters.Name
             }
 
             It 'Should have edited service to have the specified path' {
-                $serviceCimInstance.PathName | Should Be $resourceParameters.Path
+                $serviceCimInstance.PathName | Should -Be $resourceParameters.Path
             }
 
             It 'Should have edited service to have the specified display name' {
-                $service.DisplayName | Should Be $resourceParameters.DisplayName
+                $service.DisplayName | Should -Be $resourceParameters.DisplayName
             }
 
             It 'Should have edited service to have the specified description' {
-                $serviceCimInstance.Description | Should Be $resourceParameters.Description
+                $serviceCimInstance.Description | Should -Be $resourceParameters.Description
             }
 
             It 'Should have edited service to have the specified dependencies' {
                 $differentDependencies = Compare-Object -ReferenceObject $resourceParameters.Dependencies -DifferenceObject $service.ServicesDependedOn.Name
-                $differentDependencies | Should Be $null
+                $differentDependencies | Should -Be $null
             }
 
             It 'Should not have changed the service state from Running' {
-                $service.Status | Should Be 'Running'
+                $service.Status | Should -Be 'Running'
             }
 
             It 'Should not have changed the service startup type from Auto' {
-                $serviceCimInstance.StartMode | Should Be 'Auto'
+                $serviceCimInstance.StartMode | Should -Be 'Auto'
             }
 
             It 'Should not have changed the service startup account name from LocalSystem' {
-                $serviceCimInstance.StartName | Should Be 'LocalSystem'
+                $serviceCimInstance.StartName | Should -Be 'LocalSystem'
             }
 
             It 'Should not have changed the service desktop interaction setting from False' {
-                $serviceCimInstance.DesktopInteract | Should Be $false
+                $serviceCimInstance.DesktopInteract | Should -Be $false
             }
 
             It 'Should return true from Test-TargetResource with the same parameters' {
-                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should Be $true
+                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should -Be $true
             }
         }
 
@@ -247,34 +249,34 @@ try
             }
 
             It 'Should compile and apply the MOF without throwing' {
-                { 
+                {
                     . $script:configurationAllExceptCredentialFilePath -ConfigurationName $configurationName
                     & $configurationName -OutputPath $TestDrive @resourceParameters
                     Start-DscConfiguration -Path $TestDrive -ErrorAction 'Stop' -Wait -Force
-                } | Should Not Throw
+                } | Should -Not -Throw
             }
 
             $service = Get-Service -Name $resourceParameters.Name -ErrorAction 'SilentlyContinue'
             $serviceCimInstance = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name='$($resourceParameters.Name)'" -ErrorAction 'SilentlyContinue'
 
             It 'Should not have removed service with specified name' {
-                 $service | Should Not Be $null
-                 $serviceCimInstance | Should Not Be $null
+                 $service | Should -Not -Be $null
+                 $serviceCimInstance | Should -Not -Be $null
 
-                 $service.Name | Should Be $resourceParameters.Name
-                 $serviceCimInstance.Name | Should Be $resourceParameters.Name
+                 $service.Name | Should -Be $resourceParameters.Name
+                 $serviceCimInstance.Name | Should -Be $resourceParameters.Name
             }
 
             It 'Should have edited the service to have the specified state' {
-                $service.Status | Should Be $resourceParameters.State
+                $service.Status | Should -Be $resourceParameters.State
             }
 
             It 'Should have edited the service to have the specified startup type' {
-                $serviceCimInstance.StartMode | Should Be $resourceParameters.StartupType
+                $serviceCimInstance.StartMode | Should -Be $resourceParameters.StartupType
             }
 
             It 'Should return true from Test-TargetResource with the same parameters' {
-                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should Be $true
+                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should -Be $true
             }
         }
 
@@ -293,26 +295,26 @@ try
             $configurationName = 'TestCreateService'
             $resourceParameters = @{
                 Name = 'TestService'
-                Credential = Get-AppVeyorAdministratorCredential
+                Credential = Get-TestAdministratorAccountCredential
             }
 
             It 'Should compile and apply the MOF without throwing' {
-                { 
+                {
                     . $script:configurationCredentialOnlyFilePath -ConfigurationName $configurationName
                     & $configurationName -OutputPath $TestDrive -ConfigurationData $configData @resourceParameters
                     Start-DscConfiguration -Path $TestDrive -ErrorAction 'Stop' -Wait -Force
-                } | Should Not Throw
+                } | Should -Not -Throw
             }
 
             $service = Get-Service -Name $resourceParameters.Name -ErrorAction 'SilentlyContinue'
             $serviceCimInstance = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name='$($resourceParameters.Name)'" -ErrorAction 'SilentlyContinue'
 
             It 'Should not have removed service with specified name' {
-                    $service | Should Not Be $null
-                    $serviceCimInstance | Should Not Be $null
+                    $service | Should -Not -Be $null
+                    $serviceCimInstance | Should -Not -Be $null
 
-                    $service.Name | Should Be $resourceParameters.Name
-                    $serviceCimInstance.Name | Should Be $resourceParameters.Name
+                    $service.Name | Should -Be $resourceParameters.Name
+                    $serviceCimInstance.Name | Should -Be $resourceParameters.Name
             }
 
             It 'Should have edited the service to have the specified startup account name' {
@@ -323,11 +325,11 @@ try
                     $expectedStartName = $expectedStartName.TrimStart("$env:COMPUTERNAME\")
                 }
 
-                $serviceCimInstance.StartName | Should Be ".\$expectedStartName"
+                $serviceCimInstance.StartName | Should -Be ".\$expectedStartName"
             }
 
             It 'Should return true from Test-TargetResource with the same parameters' {
-                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should Be $true
+                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should -Be $true
             }
         }
 
@@ -342,30 +344,30 @@ try
             }
 
             It 'Should compile and apply the MOF without throwing' {
-                { 
+                {
                     . $script:configurationAllExceptCredentialFilePath -ConfigurationName $configurationName
                     & $configurationName -OutputPath $TestDrive @resourceParameters
                     Start-DscConfiguration -Path $TestDrive -ErrorAction 'Stop' -Wait -Force
-                } | Should Not Throw
+                } | Should -Not -Throw
             }
 
             $service = Get-Service -Name $resourceParameters.Name -ErrorAction 'SilentlyContinue'
             $serviceCimInstance = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name='$($resourceParameters.Name)'" -ErrorAction 'SilentlyContinue'
 
             It 'Should not have removed service with specified name' {
-                 $service | Should Not Be $null
-                 $serviceCimInstance | Should Not Be $null
+                 $service | Should -Not -Be $null
+                 $serviceCimInstance | Should -Not -Be $null
 
-                 $service.Name | Should Be $resourceParameters.Name
-                 $serviceCimInstance.Name | Should Be $resourceParameters.Name
+                 $service.Name | Should -Be $resourceParameters.Name
+                 $serviceCimInstance.Name | Should -Be $resourceParameters.Name
             }
 
             It 'Should have edited the service to have the specified startup account name' {
-                $serviceCimInstance.StartName | Should Be 'NT Authority\LocalService'
+                $serviceCimInstance.StartName | Should -Be 'NT Authority\LocalService'
             }
 
             It 'Should return true from Test-TargetResource with the same parameters' {
-                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should Be $true
+                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should -Be $true
             }
         }
 
@@ -380,23 +382,23 @@ try
             }
 
             It 'Should compile and apply the MOF without throwing' {
-                { 
+                {
                     . $script:configurationAllExceptCredentialFilePath -ConfigurationName $configurationName
                     & $configurationName -OutputPath $TestDrive @resourceParameters
                     Start-DscConfiguration -Path $TestDrive -ErrorAction 'Stop' -Wait -Force
-                } | Should Not Throw
+                } | Should -Not -Throw
             }
 
             $service = Get-Service -Name $resourceParameters.Name -ErrorAction 'SilentlyContinue'
             $serviceCimInstance = Get-CimInstance -ClassName 'Win32_Service' -Filter "Name='$($resourceParameters.Name)'" -ErrorAction 'SilentlyContinue'
 
             It 'Should have removed the service with specified name' {
-                 $service | Should Be $null
-                 $serviceCimInstance | Should Be $null
+                 $service | Should -Be $null
+                 $serviceCimInstance | Should -Be $null
             }
 
             It 'Should return true from Test-TargetResource with the same parameters' {
-                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should Be $true
+                MSFT_xServiceResource\Test-TargetResource @resourceParameters | Should -Be $true
             }
         }
     }

@@ -20,10 +20,9 @@
 
 Describe PullServerInstallationTests {
     BeforeAll{
- 
         # UPDATE THE PULLSERVER URL, If it is different from the default value.
-        $DscHostFQDN = [System.Net.Dns]::GetHostEntry([string]$env:computername).HostName
-        $DscPullServerURL = "https://$($DscHostFQDN):8080/PSDSCPullserver.svc"
+        $DscHostFQDN = [System.Net.Dns]::GetHostEntry([System.String] $env:computername).HostName
+        $script:dscPullServerURL = "https://$($DscHostFQDN):8080/PSDSCPullserver.svc"
 
         # UPDATE THE LOCATION OF WEB.CONFIG, if it is differnet from the default path.
         $DscWebConfigChildPath = '\inetpub\wwwroot\psdscpullserver\web.config'
@@ -35,42 +34,42 @@ Describe PullServerInstallationTests {
         }
 
         # Get web.config content as XML
-        $DscWebConfigXML = [xml](Get-Content $DscWebConfigPath)
+        $DscWebConfigXML = [System.Xml.XmlDocument] (Get-Content -Path $DscWebConfigPath)
 
         # Registration Keys info.
         $DscRegKeyName = 'RegistrationKeys.txt'
         $DscRegKeyXMLNode = "//appSettings/add[@key = 'RegistrationKeyPath']"
-        $DscRegKeyParentPath = ($DscWebConfigXML.SelectNodes($DscRegKeyXMLNode)).value
+        $DscRegKeyParentPath = ($DscWebConfigXML.SelectSingleNode($DscRegKeyXMLNode)).Value
         $DscRegKeyPath = Join-Path -Path $DscRegKeyParentPath -ChildPath $DscRegKeyName
-        $DscRegKey = Get-Content $DscRegKeyPath
+        $script:dscRegKey = Get-Content -Path $DscRegKeyPath
 
         # Configuration repository info.
         $DscConfigPathXMLNode = "//appSettings/add[@key = 'ConfigurationPath']"
-        $DscConfigPath  = ($DscWebConfigXML.SelectNodes($DscConfigPathXMLNode)).value
+        $DscConfigPath  = ($DscWebConfigXML.SelectSingleNode($DscConfigPathXMLNode)).Value
 
         # Module repository info.
         $DscModulePathXMLNode = "//appSettings/add[@key = 'ModulePath']"
-        $DscModulePath = ($DscWebConfigXML.SelectNodes($DscModulePathXMLNode)).value
+        $script:dscModulePath = ($DscWebConfigXML.SelectSingleNode($DscModulePathXMLNode)).Value
 
         # Testing Files/Variables
         $DscTestMetaConfigName = 'PullServerSetupTestMetaConfig'
-        $DscTestMetaConfigPath = Join-Path -Path $PSScriptRoot -ChildPath $DscTestMetaConfigName
+        $script:dscTestMetaConfigPath = Join-Path -Path $PSScriptRoot -ChildPath $DscTestMetaConfigName
         $DscTestConfigName = 'PullServerSetUpTest'
-        $DscTestMofPath = Join-Path -Path $DscConfigPath -ChildPath "$DscTestConfigName.mof"
+        $script:dscTestMofPath = Join-Path -Path $DscConfigPath -ChildPath "$DscTestConfigName.mof"
     }
     Context "Verify general pull server functionality" {
         It "$DscRegKeyPath exists" {
-            $DscRegKeyPath | Should Exist
+            $DscRegKeyPath | Should -Exist
         }
-        It "Module repository $DscModulePath exists" {
-            $DscModulePath | Should Exist 
+        It "Module repository $script:dscModulePath exists" {
+            $script:dscModulePath | Should -Exist
         }
         It "Configuration repository $DscConfigPath exists" {
-            $DscConfigPath | Should Exist 
+            $DscConfigPath | Should -Exist
         }
-        It "Verify server $DscPullServerURL is up and running" {
-            $DscPullServerResponse = Invoke-WebRequest -Uri $DscPullServerURL -UseBasicParsing
-            $DscPullServerResponse.StatusCode | Should Be 200
+        It "Verify server $script:dscPullServerURL is up and running" {
+            $DscPullServerResponse = Invoke-WebRequest -Uri $script:dscPullServerURL -UseBasicParsing
+            $DscPullServerResponse.StatusCode | Should -Be 200
         }
     }
     Context "Verify pull end to end works" {
@@ -80,32 +79,32 @@ Describe PullServerInstallationTests {
             {
                 Settings
                 {
-                    RefreshMode = "PULL"             
+                    RefreshMode = 'PULL'
                 }
                 ConfigurationRepositoryWeb ConfigurationManager
                 {
-                    ServerURL =  $DscPullServerURL
-                    RegistrationKey = $DscRegKey
+                    ServerURL =  $script:dscPullServerURL
+                    RegistrationKey = $script:dscRegKey
                     ConfigurationNames = @($DscTestConfigName)
                 }
             }
 
-            PullServerSetupTestMetaConfig -OutputPath $DscTestMetaConfigPath
-            Set-DscLocalConfigurationManager -Path $DscTestMetaConfigPath -Verbose:$VerbosePreference -Force
+            PullServerSetupTestMetaConfig -OutputPath $script:dscTestMetaConfigPath
+            Set-DscLocalConfigurationManager -Path $script:dscTestMetaConfigPath -Verbose:$VerbosePreference -Force
 
             $DscLocalConfigNames = (Get-DscLocalConfigurationManager).ConfigurationDownloadManagers.ConfigurationNames
-            $DscLocalConfigNames -contains $DscTestConfigName | Should Be True
+            $DscLocalConfigNames -contains $DscTestConfigName | Should -Be $true
         }
         It "Creates mof and checksum files in $DscConfigPath" {
-            # Sample test configuration 
+            # Sample test configuration
             Configuration NoOpConfig {
                 Import-DscResource -ModuleName PSDesiredStateConfiguration
                 Node ($DscTestConfigName)
                 {
                     Script script
                     {
-                        GetScript = "@{}"
-                        SetScript = "{}"            
+                        GetScript = '@{}'
+                        SetScript = '{}'
                         TestScript =  {
                             if ($false) { return $true } else {return $false}
                         }
@@ -113,17 +112,17 @@ Describe PullServerInstallationTests {
                 }
             }
 
-            # Create a mof file copy it to 
+            # Create a mof file copy it to
             NoOpConfig -OutputPath $DscConfigPath -Verbose:$VerbosePreference
-            $DscTestMofPath | Should Exist
+            $script:dscTestMofPath | Should -Exist
 
-            # Create checksum 
+            # Create checksum
             New-DscChecksum $DscConfigPath -Verbose:$VerbosePreference -Force
-            "$DscTestMofPath.checksum" | Should Exist
+            "$script:dscTestMofPath.checksum" | Should -Exist
         }
         It 'Updates DscConfiguration Successfully' {
-            Update-DscConfiguration -Wait -Verbose:$VerbosePreference 
-            (Get-DscConfiguration).ConfigurationName | Should Be "NoOpConfig"
+            Update-DscConfiguration -Wait -Verbose:$VerbosePreference
+            (Get-DscConfiguration).ConfigurationName | Should -Be 'NoOpConfig'
         }
     }
 }

@@ -4,7 +4,7 @@
 #>
 function Test-IsNanoServer
 {
-    [OutputType([Boolean])]
+    [OutputType([System.Boolean])]
     [CmdletBinding()]
     param ()
 
@@ -34,13 +34,13 @@ function Test-IsNanoServer
 #>
 function Test-CommandExists
 {
-    [OutputType([Boolean])]
+    [OutputType([System.Boolean])]
     [CmdletBinding()]
     param
     (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [String]
+        [System.String]
         $Name
     )
 
@@ -50,13 +50,13 @@ function Test-CommandExists
 
 <#
     .SYNOPSIS
-        Creates and throws an invalid argument exception
+        Creates and throws an invalid argument exception.
 
     .PARAMETER Message
-        The message explaining why this error is being thrown
+        The message explaining why this error is being thrown.
 
     .PARAMETER ArgumentName
-        The name of the invalid argument that is causing this error to be thrown
+        The name of the invalid argument that is causing this error to be thrown.
 #>
 function New-InvalidArgumentException
 {
@@ -65,19 +65,19 @@ function New-InvalidArgumentException
     (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [String]
+        [System.String]
         $Message,
 
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [String]
+        [System.String]
         $ArgumentName
     )
 
     $argumentException = New-Object -TypeName 'ArgumentException' `
-                                    -ArgumentList @($Message, $ArgumentName)
+        -ArgumentList @($Message, $ArgumentName)
     $newObjectParams = @{
-        TypeName = 'System.Management.Automation.ErrorRecord'
+        TypeName     = 'System.Management.Automation.ErrorRecord'
         ArgumentList = @($argumentException, $ArgumentName, 'InvalidArgument', $null)
     }
     $errorRecord = New-Object @newObjectParams
@@ -87,23 +87,61 @@ function New-InvalidArgumentException
 
 <#
     .SYNOPSIS
-        Creates and throws an invalid operation exception
+        Creates and throws an invalid data exception.
+
+    .PARAMETER ErrorId
+        The error Id to assign to the exception.
+
+    .PARAMETER ErrorMessage
+        The error message to assign to the exception.
+#>
+function New-InvalidDataException
+{
+    [CmdletBinding()]
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $ErrorId,
+
+        [Parameter(Mandatory = $true)]
+        [System.String]
+        $ErrorMessage
+    )
+
+    $errorCategory = [System.Management.Automation.ErrorCategory]::InvalidData
+    $exception = New-Object `
+        -TypeName System.InvalidOperationException `
+        -ArgumentList $ErrorMessage
+    $errorRecord = New-Object `
+        -TypeName System.Management.Automation.ErrorRecord `
+        -ArgumentList $exception, $ErrorId, $errorCategory, $null
+
+    throw $errorRecord
+}
+
+<#
+    .SYNOPSIS
+        Creates and throws an invalid operation exception.
 
     .PARAMETER Message
-        The message explaining why this error is being thrown
+        The message explaining why this error is being thrown.
 
     .PARAMETER ErrorRecord
-        The error record containing the exception that is causing this terminating error
+        The error record containing the exception that is causing this terminating
+        error.
 #>
 function New-InvalidOperationException
 {
     [CmdletBinding()]
     param
     (
+        [Parameter()]
         [ValidateNotNullOrEmpty()]
-        [String]
+        [System.String]
         $Message,
 
+        [Parameter()]
         [ValidateNotNull()]
         [System.Management.Automation.ErrorRecord]
         $ErrorRecord
@@ -116,18 +154,17 @@ function New-InvalidOperationException
     elseif ($null -eq $ErrorRecord)
     {
         $invalidOperationException = New-Object -TypeName 'InvalidOperationException' `
-                                                -ArgumentList @($Message)
+            -ArgumentList @( $Message )
     }
     else
     {
         $invalidOperationException = New-Object -TypeName 'InvalidOperationException' `
-                                                -ArgumentList @($Message, $ErrorRecord.Exception)
+            -ArgumentList @( $Message, $ErrorRecord.Exception )
     }
 
     $newObjectParams = @{
-        TypeName = 'System.Management.Automation.ErrorRecord'
-        ArgumentList = @( $invalidOperationException.ToString(), 'MachineStateIncorrect',
-                          'InvalidOperation', $null )
+        TypeName     = 'System.Management.Automation.ErrorRecord'
+        ArgumentList = @( $invalidOperationException.ToString(), 'MachineStateIncorrect', 'InvalidOperation', $null )
     }
 
     $errorRecordToThrow = New-Object @newObjectParams
@@ -140,7 +177,8 @@ function New-InvalidOperationException
         Falls back to en-US strings if the machine's culture is not supported.
 
     .PARAMETER ResourceName
-        The name of the resource as it appears before '.strings.psd1' of the localized string file.
+        The name of the resource as it appears before '.strings.psd1' of the localized
+        string file.
         For example:
             For xWindowsOptionalFeature: MSFT_xWindowsOptionalFeature
             For xService: MSFT_xServiceResource
@@ -153,7 +191,7 @@ function Get-LocalizedData
     (
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]
-        [String]
+        [System.String]
         $ResourceName
     )
 
@@ -174,5 +212,32 @@ function Get-LocalizedData
     return $localizedData
 }
 
-Export-ModuleMember -Function @( 'Test-IsNanoServer', 'New-InvalidArgumentException',
-    'New-InvalidOperationException', 'Get-LocalizedData' )
+<#
+    .SYNOPSIS
+        Sets the Global DSCMachineStatus variable to a value of 1.
+#>
+function Set-DSCMachineRebootRequired
+{
+    # Suppressing this rule because $global:DSCMachineStatus is used to trigger a reboot.
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
+    <#
+        Suppressing this rule because $global:DSCMachineStatus is only set,
+        never used (by design of Desired State Configuration).
+    #>
+    [System.Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+    [CmdletBinding()]
+    param
+    (
+    )
+
+    $global:DSCMachineStatus = 1
+}
+
+Export-ModuleMember -Function @(
+    'Test-IsNanoServer',
+    'New-InvalidArgumentException',
+    'New-InvalidDataException',
+    'New-InvalidOperationException',
+    'Get-LocalizedData',
+    'Set-DSCMachineRebootRequired'
+)
