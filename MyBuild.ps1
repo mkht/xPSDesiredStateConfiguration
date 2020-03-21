@@ -16,7 +16,7 @@ param(
 
     [Parameter()]
     [String]
-    $moduleVersion = '1.1.2'
+    $moduleVersion = '9.1.100'
 )
 
 Begin
