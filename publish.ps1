@@ -3,8 +3,8 @@ param (
     [string]$AzDOAccountName = 'mkht',
     [string]$AzDOProjectName = 'xPsDesiredStateConfiguration',
     [string]$AzDOArtifactFeedName = 'mkhtPSRepository',
-    [string]$AzDOPat = $(secret.AzDOPAT),
-    [string]$ModuleFolderPath = (Join-Path -Path $env:SYSTEM_ARTIFACTSDIRECTORY -ChildPath "output\xPSDesiredStateConfiguration")
+    [string]$AzDOPat = $env:AzDOPAT,
+    [string]$ModuleFolderPath = (Join-Path -Path $env:SYSTEM_ARTIFACTSDIRECTORY -ChildPath "_mkht.xPSDesiredStateConfiguration\output\xPSDesiredStateConfiguration")
 )
 
 $ErrorActionPreference = 'Stop'
