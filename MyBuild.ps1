@@ -1,7 +1,7 @@
 <#
 
 .DESCRIPTION
- Build script for xPsDesiredStateConfiguration forked by mkht
+ Build script for xPSDesiredStateConfiguration forked by mkht
 
 #>
 [CmdletBinding()]
@@ -16,14 +16,14 @@ param(
 
     [Parameter()]
     [String]
-    $moduleVersion = '9.1.0'
+    $moduleVersion = '1.1.2'
 )
 
 Begin
 {
     $ErrorActionPreference = 'Stop'
 
-    $OutputDirectory = 'output'
+    $OutputDirectory = 'output\xPSDesiredStateConfiguration'
     $CopyDirectories = @(
         'source\en-US',
         'source\DSCResources',
@@ -51,4 +51,7 @@ Process
     $SourceManifest = 'source\xPSDesiredStateConfiguration.psd1'
     Copy-Item -Path (Join-Path $PWD $SourceManifest) -Destination $OutputDirectory -Force
     Update-ModuleManifest -Path (Join-Path $OutputDirectory 'xPSDesiredStateConfiguration.psd1') -Author $Author -CompanyName $CompanyName -ModuleVersion $moduleVersion
+
+    # Copy publish script
+    Copy-Item -Path 'publish.ps1' -Destination 'output' -Force
 }
